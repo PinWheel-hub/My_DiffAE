@@ -99,9 +99,9 @@ if __name__ == "__main__":
     """
     num_workers = 16
     # original ffhq data path
-    in_path = 'datasets/ffhq'
+    in_path = '/home/wubw/work/data/mvtec_anomaly_detection/capsule/train'
     # target output path
-    out_path = 'datasets/ffhq.lmdb'
+    out_path = 'datasets/capsule256.lmdb'
 
     if not os.path.exists(out_path):
         os.makedirs(out_path)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     # imgset = datasets.ImageFolder(in_path)
     # imgset = ImageFolder(in_path)
-    exts = ['jpg']
+    exts = ['jpg', 'png']
     paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}')]
     # print(paths[:10])
 

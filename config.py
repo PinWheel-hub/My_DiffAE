@@ -39,6 +39,8 @@ data_paths = {
         'datasets/celeba_anno/CelebAMask-HQ-attribute-anno.txt'),
     'celeba_relight':
     os.path.expanduser('datasets/celeba_hq_light/celeba_light.txt'),
+    'capsulelmdb':
+    os.path.expanduser('datasets/capsule.lmdb'),
 }
 
 
@@ -92,7 +94,7 @@ class TrainConfig(BaseConfig):
     eval_every_samples: int = 200_000
     eval_ema_every_samples: int = 200_000
     fid_use_torch: bool = True
-    fp16: bool = False
+    fp16: bool = True
     grad_clip: float = 1
     img_size: int = 64
     lr: float = 0.0001
@@ -297,6 +299,13 @@ class TrainConfig(BaseConfig):
         elif self.data_name == 'celebalmdb':
             # always use d2c crop
             return CelebAlmdb(path=path or self.data_path,
+                              image_size=self.img_size,
+                              original_resolution=None,
+                              crop_d2c=True,
+                              **kwargs)
+        elif self.data_name == 'capsulelmdb':
+            # always use d2c crop
+            return FFHQlmdb(path=path or self.data_path,
                               image_size=self.img_size,
                               original_resolution=None,
                               crop_d2c=True,

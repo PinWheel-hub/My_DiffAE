@@ -11,7 +11,7 @@ from torch import nn
 
 from .nn import (avg_pool_nd, conv_nd, linear, normalization,
                  timestep_embedding, torch_checkpoint, zero_module)
-
+import numpy as np
 
 class ScaleAt(Enum):
     after_norm = 'afternorm'

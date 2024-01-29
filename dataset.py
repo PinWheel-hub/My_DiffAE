@@ -108,7 +108,7 @@ class BaseLMDB(Dataset):
 
     def __getitem__(self, index):
         with self.env.begin(write=False) as txn:
-            key = f'{self.original_resolution}-{str(index).zfill(self.zfill)}'.encode(
+            key = f'{self.original_resolution if self.original_resolution else 256}-{str(index).zfill(self.zfill)}'.encode(
                 'utf-8')
             img_bytes = txn.get(key)
 

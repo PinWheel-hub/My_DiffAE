@@ -146,6 +146,7 @@ class BeatGANsAutoencModel(BeatGANsUNetModel):
 
         if cond is None:
             if x is not None:
+                print(x.shape, x_start.shape)
                 assert len(x) == len(x_start), f'{len(x)} != {len(x_start)}'
 
             tmp = self.encode(x_start)

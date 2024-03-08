@@ -149,7 +149,7 @@ def celeba64d2c_autoenc_latent():
     conf.name = 'celeba64d2c_autoenc_latent'
     return conf
 
-def capsule128_autoenc_latent():
+def mvtec128_autoenc_latent():
     conf = pretrain_ffhq128_autoenc130M()
     conf = latent_diffusion128_config(conf)
     conf = latent_mlp_2048_norm_10layers(conf)
@@ -158,21 +158,23 @@ def capsule128_autoenc_latent():
     conf.total_samples = 101_000_000
     conf.latent_loss_type = LossType.l1
     conf.latent_beta_scheduler = 'const0.008'
-    conf.name = 'capsule128_autoenc_latent'
+    conf.name = 'mvtec128_autoenc_latent'
     return conf
 
 
-def capsule_autoenc_latent():
-    conf = pretrain_ffhq256_autoenc()
+def mvtec_autoenc_latent():
+    conf = pretrain_mvtec_autoenc()
     conf = latent_diffusion128_config(conf)
     conf = latent_mlp_2048_norm_10layers(conf)
     conf = latent_256_batch_size(conf)
     conf = adamw_weight_decay(conf)
-    conf.total_samples = 101_000_000
+    conf.total_samples = 5_000_000
+    conf.save_every_samples = 500_000
     conf.latent_loss_type = LossType.l1
     conf.latent_beta_scheduler = 'const0.008'
-    conf.eval_ema_every_samples = 200_000_000
-    conf.eval_every_samples = 200_000_000
-    conf.sample_every_samples = 4_000_000
-    conf.name = 'capsule_autoenc_latent'
+    conf.eval_ema_every_samples = 1000_000
+    conf.eval_every_samples = 1000_000
+    conf.batch_size = 64
+    conf.lr = 1e-4 * conf.batch_size / 64
+    conf.name = 'mvtec_autoenc_latent'
     return conf

@@ -6,13 +6,14 @@ if __name__ == '__main__':
 
     # infer the latents for training the latent DPM
     # NOTE: not gpu heavy, but more gpus can be of use!
-    gpus = [0]
-    conf = capsule_autoenc()
-    conf.eval_programs = ['infer']
-    train(conf, gpus=gpus, mode='train')
+    # gpus = [0]
+    # conf = mvtec_autoenc()
+    # conf.eval_programs = ['infer']
+    # train(conf, gpus=gpus, mode='train')
+    # train(conf, gpus=gpus, mode='eval')
 
     # train the latent DPM
     # NOTE: only need a single gpu
     gpus = [0]
-    conf = capsule_autoenc_latent()
+    conf = mvtec_autoenc_latent()
     train(conf, gpus=gpus)

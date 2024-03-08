@@ -41,7 +41,7 @@ def autoenc_base():
     conf.eval_ema_every_samples = 200_000
     conf.eval_every_samples = 200_000
     conf.fp16 = True
-    conf.lr = 1e-4 / 16
+    conf.lr = 1e-4
     conf.model_name = ModelName.beatgans_autoenc
     conf.net_attn = (16, )
     conf.net_beatgans_attn_head = 1
@@ -147,7 +147,7 @@ def ffhq256_autoenc():
     conf.eval_every_samples = 10_000_000
     conf.eval_ema_every_samples = 10_000_000
     conf.total_samples = 200_000_000
-    conf.batch_size = 4
+    conf.batch_size = 64
     conf.make_model_conf()
     conf.name = 'ffhq256_autoenc'
     return conf
@@ -165,6 +165,54 @@ def ffhq256_autoenc_eco():
     conf.batch_size = 64
     conf.make_model_conf()
     conf.name = 'ffhq256_autoenc_eco'
+    return conf
+
+def mvtec128_autoenc_base():
+    conf = autoenc_base()
+    conf.data_name = 'mvteclmdb'
+    conf.scale_up_gpus(4)
+    conf.img_size = 128
+    conf.net_ch = 128
+    # final resolution = 8x8
+    conf.net_ch_mult = (1, 1, 2, 3, 4)
+    # final resolution = 4x4
+    conf.net_enc_channel_mult = (1, 1, 2, 3, 4, 4)
+    conf.eval_ema_every_samples = 10_000_000
+    conf.eval_every_samples = 10_000_000
+    conf.make_model_conf()
+    return conf
+
+
+def mvtec_autoenc():
+    conf = mvtec128_autoenc_base()
+    conf.img_size = 256
+    conf.net_ch = 128
+    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
+    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
+    conf.eval_every_samples = 40000
+    conf.eval_ema_every_samples = 40000
+    conf.total_samples = 40_000
+    conf.save_every_samples = 4000
+    conf.batch_size = 6
+    conf.lr = 1e-4 * conf.batch_size / 64
+    conf.sample_size = conf.batch_size
+    conf.make_model_conf()
+    conf.name = 'mvtec_autoenc'
+    return conf
+
+
+def mvtec_autoenc_eco():
+    conf = mvtec128_autoenc_base()
+    conf.img_size = 256
+    conf.net_ch = 128
+    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
+    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
+    conf.eval_every_samples = 10_000_000
+    conf.eval_ema_every_samples = 10_000_000
+    conf.total_samples = 200_000_000
+    conf.batch_size = 64
+    conf.make_model_conf()
+    conf.name = 'mvtec_autoenc_eco'
     return conf
 
 
@@ -197,6 +245,14 @@ def ffhq128_autoenc_130M():
     conf.eval_ema_every_samples = 10_000_000
     conf.eval_every_samples = 10_000_000
     conf.name = 'ffhq128_autoenc_130M'
+    return conf
+
+def mvtec128_autoenc_130M():
+    conf = mvtec128_autoenc_base()
+    conf.total_samples = 130_000_000
+    conf.eval_ema_every_samples = 10_000_000
+    conf.eval_every_samples = 10_000_000
+    conf.name = 'mvtec128_autoenc_130M'
     return conf
 
 
@@ -280,9 +336,27 @@ def pretrain_ffhq256_autoenc():
     conf.latent_infer_path = f'checkpoints/{ffhq256_autoenc().name}/latent.pkl'
     return conf
 
+def pretrain_mvtec128_autoenc130M():
+    conf = mvtec128_autoenc_base()
+    conf.pretrain = PretrainConfig(
+        name='130M',
+        path=f'checkpoints/{mvtec128_autoenc_130M().name}/last.ckpt',
+    )
+    conf.latent_infer_path = f'checkpoints/{mvtec128_autoenc_130M().name}/latent.pkl'
+    return conf
+
+def pretrain_mvtec_autoenc():
+    conf = mvtec_autoenc()
+    conf.pretrain = PretrainConfig(
+        name='90M',
+        path=f'checkpoints/{mvtec_autoenc().name}/last.ckpt',
+    )
+    conf.latent_infer_path = f'checkpoints/{mvtec_autoenc().name}/latent.pkl'
+    return conf
+
 
 def pretrain_horse128():
-    conf = horse128_autoenc()
+    conf = horse128_autoenc()                
     conf.pretrain = PretrainConfig(
         name='82M',
         path=f'checkpoints/{horse128_autoenc().name}/last.ckpt',
@@ -300,47 +374,3 @@ def pretrain_bedroom128():
     conf.latent_infer_path = f'checkpoints/{bedroom128_autoenc().name}/latent.pkl'
     return conf
 
-def capsule128_autoenc_base():
-    conf = autoenc_base()
-    conf.data_name = 'capsulelmdb'
-    conf.scale_up_gpus(4)
-    conf.img_size = 128
-    conf.net_ch = 128
-    # final resolution = 8x8
-    conf.net_ch_mult = (1, 1, 2, 3, 4)
-    # final resolution = 4x4
-    conf.net_enc_channel_mult = (1, 1, 2, 3, 4, 4)
-    conf.eval_ema_every_samples = 10_000_000
-    conf.eval_every_samples = 10_000_000
-    conf.make_model_conf()
-    return conf
-
-
-def capsule_autoenc():
-    conf = capsule128_autoenc_base()
-    conf.img_size = 256
-    conf.net_ch = 128
-    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
-    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
-    conf.eval_every_samples = 10_000_000
-    conf.eval_ema_every_samples = 10_000_000
-    conf.total_samples = 200_000_000
-    conf.batch_size = 4
-    conf.make_model_conf()
-    conf.name = 'capsule_autoenc'
-    return conf
-
-
-def capsule_autoenc_eco():
-    conf = capsule128_autoenc_base()
-    conf.img_size = 256
-    conf.net_ch = 128
-    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
-    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
-    conf.eval_every_samples = 10_000_000
-    conf.eval_ema_every_samples = 10_000_000
-    conf.total_samples = 200_000_000
-    conf.batch_size = 64
-    conf.make_model_conf()
-    conf.name = 'capsule_autoenc_eco'
-    return conf

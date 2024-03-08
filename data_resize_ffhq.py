@@ -52,10 +52,10 @@ def prepare(env,
 
     # index = filename in int
     indexs = []
-    for each in paths:
+    for idx, each in enumerate(paths):
         file = os.path.basename(each)
         name, ext = file.split('.')
-        idx = int(name)
+        # idx = int(name)
         indexs.append(idx)
 
     # sort by file index
@@ -99,9 +99,9 @@ if __name__ == "__main__":
     """
     num_workers = 16
     # original ffhq data path
-    in_path = '/home/wubw/work/data/mvtec_anomaly_detection/capsule/train'
+    in_path = '/home/wubw/work/data/mvtec_anomaly_detection/'
     # target output path
-    out_path = 'datasets/capsule256.lmdb'
+    out_path = 'datasets/mvtec.lmdb'
 
     if not os.path.exists(out_path):
         os.makedirs(out_path)
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # imgset = datasets.ImageFolder(in_path)
     # imgset = ImageFolder(in_path)
     exts = ['jpg', 'png']
-    paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}')]
+    paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}') if 'ground_truth' not in str(p)]
     # print(paths[:10])
 
     with lmdb.open(out_path, map_size=1024**4, readahead=False) as env:

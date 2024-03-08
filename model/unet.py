@@ -10,6 +10,10 @@ import torch.nn.functional as F
 from choices import *
 from config_base import BaseConfig
 from .blocks import *
+from torchvision import models
+
+from my_nets.attention import Attention
+from my_nets.resnet_encoder import ResNet18Encoder, BasicBlock
 
 from .nn import (conv_nd, linear, normalization, timestep_embedding,
                  torch_checkpoint, zero_module)
@@ -534,6 +538,139 @@ class BeatGANsEncoderModel(nn.Module):
         h = self.out(x)
         return h
 
+@dataclass
+class Resnet18EncoderConfig(BaseConfig):
+    image_size: int
+    in_channels: int
+    model_channels: int
+    out_hid_channels: int
+    out_channels: int
+    num_res_blocks: int
+    attention_resolutions: Tuple[int]
+    dropout: float = 0
+    channel_mult: Tuple[int] = (1, 2, 4, 8)
+    use_time_condition: bool = True
+    conv_resample: bool = True
+    dims: int = 2
+    use_checkpoint: bool = False
+    num_heads: int = 1
+    num_head_channels: int = -1
+    resblock_updown: bool = False
+    use_new_attention_order: bool = False
+    pool: str = 'adaptivenonzero'
+
+    def make_model(self):
+        return Resnet18EncoderModel(self)
+
+
+class Resnet18EncoderModel(nn.Module):
+    """
+    The half UNet model with attention and timestep embedding.
+
+    For usage, see UNet.
+    """
+    def __init__(self, conf: Resnet18EncoderConfig):
+        super().__init__()
+        self.conf = conf
+        self.dtype = th.float32
+
+        if conf.use_time_condition:
+            time_embed_dim = conf.model_channels * 4
+            self.time_embed = nn.Sequential(
+                linear(conf.model_channels, time_embed_dim),
+                nn.SiLU(),
+                linear(time_embed_dim, time_embed_dim),
+            )
+        else:
+            time_embed_dim = None
+
+        ch = 512
+        self.input_blocks = nn.ModuleList([
+            TimestepEmbedSequential(
+                conv_nd(conf.dims, conf.in_channels, ch, 3, padding=1))
+        ])
+        self._feature_size = ch
+        input_block_chans = [ch]
+        ds = 1
+        resolution = conf.image_size
+
+        self.resnet = models.resnet18(pretrained=True)
+        feature_channels = [64, 64, 128, 256, 512]
+        
+        # 移除ResNet18的最后一个特征层、全连接层和平均池化层
+        del self.resnet.layer4, self.resnet.fc, self.resnet.avgpool
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+
+        # 提取ResNet的各个阶段
+        self.layer0 = nn.Sequential(self.resnet.conv1, self.resnet.bn1, self.resnet.relu, self.resnet.maxpool)
+        self.layer1 = self.resnet.layer1
+        self.layer2 = self.resnet.layer2
+        self.layer3 = self.resnet.layer3
+
+        self.adjust3 = nn.Conv2d(feature_channels[3], feature_channels[3], kernel_size=1)
+        self.adjust2 = nn.Conv2d(feature_channels[2], feature_channels[3], kernel_size=1)
+
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+
+        if conf.pool == "adaptivenonzero":
+            self.out = nn.Sequential(
+                normalization(ch),
+                nn.SiLU(),
+                nn.AdaptiveAvgPool2d((1, 1)),
+                conv_nd(conf.dims, ch, conf.out_channels, 1),
+                nn.Flatten(),
+            )
+        else:
+            raise NotImplementedError(f"Unexpected {conf.pool} pooling")
+        
+        self.res_block = BasicBlock(ch, ch)
+        self.attn = Attention()
+
+    def forward(self, x, t=None, return_2d_feature=False):
+        """
+        Apply the model to an input batch.
+
+        :param x: an [N x C x ...] Tensor of inputs.
+        :param timesteps: a 1-D batch of timesteps.
+        :return: an [N x K] Tensor of outputs.
+        """
+        if self.conf.use_time_condition:
+            emb = self.time_embed(timestep_embedding(t, self.model_channels))
+        else:
+            emb = None
+
+        results = []
+        h = self.layer0(x)
+        h = self.layer1(h)
+        h = self.layer2(h)
+        c2 = h
+        h = self.layer3(h)      
+        c3 = h
+
+        c2 = self.adjust2(c2)
+        c3 = self.adjust3(c3)
+        c3 = self.upsample(c3)
+
+        h = th.cat((c2, c3), dim=1)
+        # h = self.attn(h)
+        h = self.res_block(h)
+
+        h_2d = h
+        h = self.out(h)
+
+        
+        if return_2d_feature:
+            return h, h_2d
+        else:
+            return h
+
+    def forward_flatten(self, x):
+        """
+        transform the last 2d feature into a flatten vector
+        """
+        h = self.out(x)
+        return h
 
 class SuperResModel(BeatGANsUNetModel):
     """

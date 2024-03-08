@@ -291,8 +291,8 @@ def evaluate_fid(
                         x_T=x_T,
                         x_start=imgs,
                         cond=None,
-                        sampler=sampler,
-                        latent_sampler=latent_sampler).cpu()
+                        sampler=sampler,).cpu()
+                        # latent_sampler=latent_sampler).cpu()
                     # model: BeatGANsAutoencModel
                     # # returns {'cond', 'cond2'}
                     # conds = model.encode(imgs)

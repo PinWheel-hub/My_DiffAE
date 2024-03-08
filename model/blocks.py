@@ -234,8 +234,10 @@ class ResBlock(TimestepBlock):
                 # and treat as if the network has one condition
                 if cond is None:
                     cond_out = None
-                else:
+                elif isinstance(cond, th.Tensor):
                     cond_out = self.cond_emb_layers(cond).type(h.dtype)
+                else:
+                    cond_out = self.cond_emb_layers(cond['cond']).type(h.dtype)
 
                 if cond_out is not None:
                     while len(cond_out.shape) < len(h.shape):

@@ -14,3 +14,7 @@ checkpoints
 
 .ipynb_checkpoints/
 *.jpg
+*.mdb
+evals
+*.out
+*.pth

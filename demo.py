@@ -1,21 +1,33 @@
-import lmdb
-from PIL import Image
-from io import BytesIO
+from sklearn.mixture import GaussianMixture
+from sklearn.datasets import make_blobs
+import numpy as np
 
-# 打开 LMDB 环境
-env = lmdb.open('datasets/ffhq256.lmdb', readonly=True)
+# 步骤 1: 生成模拟数据
+# 生成正常样本
+X_normal, _ = make_blobs(n_samples=300, centers=[[0, 0]], cluster_std=1.0)
+# 生成异常样本
+X_abnormal, _ = make_blobs(n_samples=100, centers=[[5, 5]], cluster_std=1.5)
 
-# 创建一个事务
-with env.begin() as txn:
-    # 从数据库中读取图像数据
-    image_data = txn.get(b'256-00198')
+print(X_normal.shape, X_abnormal.shape)
+# 步骤 2: 训练GMM
+# 对正常样本训练GMM
+gmm_normal = GaussianMixture(n_components=1, random_state=42)
+gmm_normal.fit(X_normal)
 
-    # 将二进制数据转换为字节流
-    image_stream = BytesIO(image_data)
+# 对异常样本训练GMM
+gmm_abnormal = GaussianMixture(n_components=1, random_state=42)
+gmm_abnormal.fit(X_abnormal)
 
-    # 使用 PIL 读取图像
-    try:
-        image = Image.open(image_stream)
-        image.show()
-    except IOError:
-        print("无法读取图像")
+# 步骤 3: 评估新样本
+# 假设有一个新样本
+new_sample = np.array([[2, 2]])
+
+# 计算新样本属于正常GMM的对数似然
+log_likelihood_normal = gmm_normal.score_samples(new_sample)
+# 计算新样本属于异常GMM的对数似然
+log_likelihood_abnormal = gmm_abnormal.score_samples(new_sample)
+
+# 对数似然差作为异常分数（正常分数 - 异常分数）
+log_likelihood_diff = log_likelihood_normal - log_likelihood_abnormal
+
+print(log_likelihood_normal, log_likelihood_abnormal, log_likelihood_diff)

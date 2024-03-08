@@ -536,7 +536,7 @@ class LitModel(pl.LightningModule):
 
         if self.conf.sample_every_samples > 0 and is_time(
                 self.num_samples, self.conf.sample_every_samples,
-                self.conf.batch_size_effective):
+                self.conf.batch_size_effective) and False:
 
             if self.conf.train_mode.require_dataset_infer():
                 do(self.model, '', use_xstart=False)

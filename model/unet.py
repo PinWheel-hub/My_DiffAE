@@ -375,6 +375,7 @@ class BeatGANsEncoderConfig(BaseConfig):
     pool: str = 'adaptivenonzero'
 
     def make_model(self):
+        # print(self.image_size, self.in_channels, self.model_channels, self.out_hid_channels, self.out_channels, self.num_res_blocks, self.attention_resolutions, self.dropout, self.channel_mult, self.use_time_condition, self.conv_resample, self.dims, self.use_checkpoint, self.num_heads, self.num_head_channels, self.resblock_updown, self.use_new_attention_order, self.pool)
         return BeatGANsEncoderModel(self)
 
 
@@ -585,10 +586,10 @@ class Resnet18EncoderModel(nn.Module):
             time_embed_dim = None
 
         ch = 512
-        self.input_blocks = nn.ModuleList([
-            TimestepEmbedSequential(
-                conv_nd(conf.dims, conf.in_channels, ch, 3, padding=1))
-        ])
+        # self.input_blocks = nn.ModuleList([
+        #     TimestepEmbedSequential(
+        #         conv_nd(conf.dims, conf.in_channels, ch, 3, padding=1))
+        # ])
         self._feature_size = ch
         input_block_chans = [ch]
         ds = 1
@@ -608,8 +609,9 @@ class Resnet18EncoderModel(nn.Module):
         self.layer2 = self.resnet.layer2
         self.layer3 = self.resnet.layer3
 
-        self.adjust3 = nn.Conv2d(feature_channels[3], feature_channels[3], kernel_size=1)
-        self.adjust2 = nn.Conv2d(feature_channels[2], feature_channels[3], kernel_size=1)
+        self.adjust3 = nn.Conv2d(feature_channels[3], feature_channels[3], kernel_size=3, stride=1, padding=1)
+        self.adjust2 = nn.Conv2d(feature_channels[2], feature_channels[2], kernel_size=3, stride=1, padding=1)
+        self.adjust1 = nn.Conv2d(feature_channels[1], feature_channels[2], kernel_size=3, stride=2, padding=1)
 
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
@@ -624,8 +626,8 @@ class Resnet18EncoderModel(nn.Module):
         else:
             raise NotImplementedError(f"Unexpected {conf.pool} pooling")
         
-        self.res_block = BasicBlock(ch, ch)
-        self.attn = Attention()
+        # self.res_block = BasicBlock(ch, ch)
+        # self.attn = Attention()
 
     def forward(self, x, t=None, return_2d_feature=False):
         """
@@ -643,18 +645,20 @@ class Resnet18EncoderModel(nn.Module):
         results = []
         h = self.layer0(x)
         h = self.layer1(h)
+        c1 = h
         h = self.layer2(h)
         c2 = h
         h = self.layer3(h)      
         c3 = h
 
+        c1 = self.adjust1(c1)
         c2 = self.adjust2(c2)
         c3 = self.adjust3(c3)
         c3 = self.upsample(c3)
 
-        h = th.cat((c2, c3), dim=1)
+        h = th.cat((c1, c2, c3), dim=1)
         # h = self.attn(h)
-        h = self.res_block(h)
+        # h = self.res_block(h)
 
         h_2d = h
         h = self.out(h)

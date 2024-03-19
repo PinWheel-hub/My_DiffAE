@@ -57,27 +57,27 @@ class BeatGANsAutoencModel(BeatGANsUNetModel):
             pool=conf.enc_pool,
         ).make_model()
 
-        # self.encoder = Resnet18EncoderConfig(
-        #     image_size=conf.image_size,
-        #     in_channels=conf.in_channels,
-        #     model_channels=conf.model_channels,
-        #     out_hid_channels=conf.enc_out_channels,
-        #     out_channels=conf.enc_out_channels,
-        #     num_res_blocks=conf.enc_num_res_block,
-        #     attention_resolutions=(conf.enc_attn_resolutions
-        #                            or conf.attention_resolutions),
-        #     dropout=conf.dropout,
-        #     channel_mult=conf.enc_channel_mult or conf.channel_mult,
-        #     use_time_condition=False,
-        #     conv_resample=conf.conv_resample,
-        #     dims=conf.dims,
-        #     use_checkpoint=conf.use_checkpoint or conf.enc_grad_checkpoint,
-        #     num_heads=conf.num_heads,
-        #     num_head_channels=conf.num_head_channels,
-        #     resblock_updown=conf.resblock_updown,
-        #     use_new_attention_order=conf.use_new_attention_order,
-        #     pool=conf.enc_pool,
-        # ).make_model()
+        self.encoder = Resnet18EncoderConfig(
+            image_size=conf.image_size,
+            in_channels=conf.in_channels,
+            model_channels=conf.model_channels,
+            out_hid_channels=conf.enc_out_channels,
+            out_channels=conf.enc_out_channels,
+            num_res_blocks=conf.enc_num_res_block,
+            attention_resolutions=(conf.enc_attn_resolutions
+                                   or conf.attention_resolutions),
+            dropout=conf.dropout,
+            channel_mult=conf.enc_channel_mult or conf.channel_mult,
+            use_time_condition=False,
+            conv_resample=conf.conv_resample,
+            dims=conf.dims,
+            use_checkpoint=conf.use_checkpoint or conf.enc_grad_checkpoint,
+            num_heads=conf.num_heads,
+            num_head_channels=conf.num_head_channels,
+            resblock_updown=conf.resblock_updown,
+            use_new_attention_order=conf.use_new_attention_order,
+            pool=conf.enc_pool,
+        ).make_model()
 
         # self.encoder = ResNet18Encoder(use_checkpoint=conf.use_checkpoint or conf.enc_grad_checkpoint)
 

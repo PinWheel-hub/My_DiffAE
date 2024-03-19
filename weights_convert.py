@@ -5,14 +5,14 @@ from tqdm import tqdm
 if __name__ == '__main__':
 
     src_state_dict = torch.load('checkpoints/mvtec_autoenc/last.ckpt', map_location='cpu')
-    dst_state_dict = torch.load('/home/wubw/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth', map_location='cpu')
+    # dst_state_dict = torch.load('/home/wubw/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth', map_location='cpu')
 
     state_tuples = {''}
 
     src_state_dict = src_state_dict['state_dict']
     src_state_dict = {k[len("model.encoder."):]: v for k, v in src_state_dict.items() if k.startswith("model.encoder.")}
-    # print(src_state_dict.keys())
-    torch.save(dst_state_dict, 'checkpoints/resnet18_diffae.pth')
+    print(src_state_dict.keys())
+    torch.save(src_state_dict, 'checkpoints/resnet18_diffae.pth')
 
     # prefix = 'model.encoder.features' 
     # # 使用字典推导式选择以prefix开头的键值对

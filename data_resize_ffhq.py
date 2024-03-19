@@ -99,7 +99,7 @@ if __name__ == "__main__":
     """
     num_workers = 16
     # original ffhq data path
-    in_path = '/home/wubw/work/data/mvtec_anomaly_detection/'
+    in_path = '/data/data_wbw/data/mvtec_anomaly_detection/'
     # target output path
     out_path = 'datasets/mvtec.lmdb'
 

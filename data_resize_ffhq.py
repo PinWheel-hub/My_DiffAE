@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # imgset = datasets.ImageFolder(in_path)
     # imgset = ImageFolder(in_path)
     exts = ['jpg', 'png']
-    paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}') if 'ground_truth' not in str(p)]
+    paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}') if 'ground_truth' not in str(p) and 'test' not in str(p)]
     # print(paths[:10])
 
     with lmdb.open(out_path, map_size=1024**4, readahead=False) as env:

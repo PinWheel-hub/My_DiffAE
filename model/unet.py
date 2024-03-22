@@ -609,8 +609,8 @@ class Resnet18EncoderModel(nn.Module):
         self.layer2 = self.resnet.layer2
         self.layer3 = self.resnet.layer3
 
-        self.adjust3 = nn.Conv2d(feature_channels[3], feature_channels[3], kernel_size=3, stride=1, padding=1)
-        self.adjust2 = nn.Conv2d(feature_channels[2], feature_channels[2], kernel_size=3, stride=1, padding=1)
+        self.adjust3 = nn.Conv2d(feature_channels[3], feature_channels[3], kernel_size=1)
+        self.adjust2 = nn.Conv2d(feature_channels[2], feature_channels[2], kernel_size=1)
         self.adjust1 = nn.Conv2d(feature_channels[1], feature_channels[2], kernel_size=3, stride=2, padding=1)
 
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
@@ -626,6 +626,15 @@ class Resnet18EncoderModel(nn.Module):
         else:
             raise NotImplementedError(f"Unexpected {conf.pool} pooling")
         
+        self.pool = nn.AvgPool2d(3, 1, 1, count_include_pad=True)
+
+        self.attn = AttentionBlock(
+                        ch,
+                        use_checkpoint=conf.use_checkpoint,
+                        num_heads=conf.num_heads,
+                        num_head_channels=conf.num_head_channels,
+                        use_new_attention_order=conf.use_new_attention_order,
+                    )
         # self.res_block = BasicBlock(ch, ch)
         # self.attn = Attention()
 
@@ -645,11 +654,11 @@ class Resnet18EncoderModel(nn.Module):
         results = []
         h = self.layer0(x)
         h = self.layer1(h)
-        c1 = h
+        c1 = self.pool(h)
         h = self.layer2(h)
-        c2 = h
+        c2 = self.pool(h)
         h = self.layer3(h)      
-        c3 = h
+        c3 = self.pool(h)
 
         c1 = self.adjust1(c1)
         c2 = self.adjust2(c2)
@@ -657,7 +666,7 @@ class Resnet18EncoderModel(nn.Module):
         c3 = self.upsample(c3)
 
         h = th.cat((c1, c2, c3), dim=1)
-        # h = self.attn(h)
+        h = self.attn(h)
         # h = self.res_block(h)
 
         h_2d = h

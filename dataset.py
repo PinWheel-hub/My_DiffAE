@@ -71,7 +71,7 @@ class ImageDataset(Dataset):
 
 class SubsetDataset(Dataset):
     def __init__(self, dataset, size):
-        assert len(dataset) >= size
+        assert len(dataset) >= 4000
         self.dataset = dataset
         self.size = size
 

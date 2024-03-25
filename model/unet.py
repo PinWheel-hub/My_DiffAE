@@ -585,7 +585,7 @@ class Resnet18EncoderModel(nn.Module):
         else:
             time_embed_dim = None
 
-        ch = 512
+        ch = 256
         # self.input_blocks = nn.ModuleList([
         #     TimestepEmbedSequential(
         #         conv_nd(conf.dims, conf.in_channels, ch, 3, padding=1))
@@ -596,7 +596,9 @@ class Resnet18EncoderModel(nn.Module):
         resolution = conf.image_size
 
         self.resnet = models.resnet18(pretrained=True)
-        feature_channels = [64, 64, 128, 256, 512]
+        scale = [resolution // 2, resolution // 4, resolution // 8, resolution // 16, resolution // 32]
+        in_channels = [64, 64, 128, 256, 512]
+        out_channels = [64, 256, 256, 256, 512]
         
         # 移除ResNet18的最后一个特征层、全连接层和平均池化层
         del self.resnet.layer4, self.resnet.fc, self.resnet.avgpool
@@ -609,18 +611,18 @@ class Resnet18EncoderModel(nn.Module):
         self.layer2 = self.resnet.layer2
         self.layer3 = self.resnet.layer3
 
-        self.adjust3 = nn.Conv2d(feature_channels[3], feature_channels[3], kernel_size=1)
-        self.adjust2 = nn.Conv2d(feature_channels[2], feature_channels[2], kernel_size=1)
-        self.adjust1 = nn.Conv2d(feature_channels[1], feature_channels[2], kernel_size=3, stride=2, padding=1)
+        self.adjust1 = nn.Conv2d(in_channels[1], out_channels[1], kernel_size=3, stride=2, padding=1)
+        self.adjust2 = nn.Conv2d(in_channels[2], out_channels[2], kernel_size=1)
+        self.adjust3 = nn.Conv2d(in_channels[3], out_channels[3], kernel_size=1)
 
         self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
 
         if conf.pool == "adaptivenonzero":
             self.out = nn.Sequential(
-                normalization(ch),
+                normalization(512),
                 nn.SiLU(),
                 nn.AdaptiveAvgPool2d((1, 1)),
-                conv_nd(conf.dims, ch, conf.out_channels, 1),
+                conv_nd(conf.dims, 512, conf.out_channels, 1),
                 nn.Flatten(),
             )
         else:
@@ -628,15 +630,41 @@ class Resnet18EncoderModel(nn.Module):
         
         self.pool = nn.AvgPool2d(3, 1, 1, count_include_pad=True)
 
-        self.attn = AttentionBlock(
-                        ch,
-                        use_checkpoint=conf.use_checkpoint,
-                        num_heads=conf.num_heads,
-                        num_head_channels=conf.num_head_channels,
-                        use_new_attention_order=conf.use_new_attention_order,
-                    )
-        # self.res_block = BasicBlock(ch, ch)
-        # self.attn = Attention()
+        # self.attn1 = AttentionBlock(
+        #                 in_channels[1],
+        #                 use_checkpoint=conf.use_checkpoint,
+        #                 num_heads=conf.num_heads,
+        #                 num_head_channels=conf.num_head_channels,
+        #                 use_new_attention_order=conf.use_new_attention_order,
+        #             )
+        # self.attn2 = AttentionBlock(
+        #                 in_channels[2],
+        #                 use_checkpoint=conf.use_checkpoint,
+        #                 num_heads=conf.num_heads,
+        #                 num_head_channels=conf.num_head_channels,
+        #                 use_new_attention_order=conf.use_new_attention_order,
+        #             )
+        # self.attn3 = AttentionBlock(
+        #                 in_channels[3],
+        #                 use_checkpoint=conf.use_checkpoint,
+        #                 num_heads=conf.num_heads,
+        #                 num_head_channels=conf.num_head_channels,
+        #                 use_new_attention_order=conf.use_new_attention_order,
+        #             )
+        # self.attn = AttentionBlock(
+        #                 ch,
+        #                 use_checkpoint=conf.use_checkpoint,
+        #                 num_heads=conf.num_heads,
+        #                 num_head_channels=conf.num_head_channels,
+        #                 use_new_attention_order=conf.use_new_attention_order,
+        #             )
+        
+        # self.pos_emb1 = nn.Parameter(th.randn(in_channels[1], scale[1], scale[1]) / in_channels[1]**0.5)
+        # self.pos_emb2 = nn.Parameter(th.randn(in_channels[2], scale[2], scale[2]) / in_channels[2]**0.5)
+        # self.pos_emb3 = nn.Parameter(th.randn(in_channels[3], scale[3], scale[3]) / in_channels[3]**0.5)
+
+        self.conv1 = nn.Conv2d(ch, 384, kernel_size=3, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(384, 512, kernel_size=3, stride=2, padding=1)
 
     def forward(self, x, t=None, return_2d_feature=False):
         """
@@ -660,14 +688,24 @@ class Resnet18EncoderModel(nn.Module):
         h = self.layer3(h)      
         c3 = self.pool(h)
 
+        # c1 = c1 + self.pos_emb1
+        # c2 = c2 + self.pos_emb2
+        # c3 = c3 + self.pos_emb3
+
+        # c1 = self.attn1(c1)
+        # c2 = self.attn2(c2)
+        # c3 = self.attn3(c3)
+
         c1 = self.adjust1(c1)
         c2 = self.adjust2(c2)
         c3 = self.adjust3(c3)
         c3 = self.upsample(c3)
 
-        h = th.cat((c1, c2, c3), dim=1)
-        h = self.attn(h)
-        # h = self.res_block(h)
+        h = c1 + c2 + c3
+        h = self.conv1(h)
+        h = self.conv2(h)
+
+        # h = self.attn(h)
 
         h_2d = h
         h = self.out(h)

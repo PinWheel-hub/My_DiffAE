@@ -191,8 +191,8 @@ def mvtec_autoenc():
     conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
     conf.eval_every_samples = 800_000
     conf.eval_ema_every_samples = 800_000
-    conf.total_samples = 80_000
-    conf.save_every_samples = 5000
+    conf.total_samples = 60_000
+    conf.save_every_samples = 3000
     conf.batch_size = 8
     conf.lr = 1e-4 * conf.batch_size / 64
     conf.sample_size = conf.batch_size

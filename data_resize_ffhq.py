@@ -99,7 +99,7 @@ if __name__ == "__main__":
     """
     num_workers = 16
     # original ffhq data path
-    in_path = '/data/data_wbw/data/mvtec_anomaly_detection/'
+    in_path = '/home/wubw/work/data/mvtec_anomaly_detection/'
     # target output path
     out_path = 'datasets/mvtec.lmdb'
 
@@ -116,7 +116,11 @@ if __name__ == "__main__":
     # imgset = datasets.ImageFolder(in_path)
     # imgset = ImageFolder(in_path)
     exts = ['jpg', 'png']
-    paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}') if 'ground_truth' not in str(p) and 'test' not in str(p)]
+    textures = ['carpet', 'grid', 'leather', 'tile', 'wood', 'bottle', 'metal_nut']
+    objects = ['cable', 'capsule', 'hazelnut', 'pill', 'screw',
+        'toothbrush', 'transistor', 'zipper']
+    exclude = ['ground_truth', 'test', 'DISthresh'] + objects
+    paths = [p for ext in exts for p in Path(f'{in_path}').glob(f'**/*.{ext}') if not any(sub_str in str(p) for sub_str in exclude)]
     # print(paths[:10])
 
     with lmdb.open(out_path, map_size=1024**4, readahead=False) as env:

@@ -585,7 +585,7 @@ class Resnet18EncoderModel(nn.Module):
         else:
             time_embed_dim = None
 
-        ch = 256
+        ch = 512
         # self.input_blocks = nn.ModuleList([
         #     TimestepEmbedSequential(
         #         conv_nd(conf.dims, conf.in_channels, ch, 3, padding=1))
@@ -598,7 +598,7 @@ class Resnet18EncoderModel(nn.Module):
         self.resnet = models.resnet18(pretrained=True)
         scale = [resolution // 2, resolution // 4, resolution // 8, resolution // 16, resolution // 32]
         in_channels = [64, 64, 128, 256, 512]
-        out_channels = [64, 256, 256, 256, 512]
+        out_channels = [64, 128, 128, 256, 512]
         
         # 移除ResNet18的最后一个特征层、全连接层和平均池化层
         del self.resnet.layer4, self.resnet.fc, self.resnet.avgpool
@@ -619,10 +619,10 @@ class Resnet18EncoderModel(nn.Module):
 
         if conf.pool == "adaptivenonzero":
             self.out = nn.Sequential(
-                normalization(512),
+                normalization(ch),
                 nn.SiLU(),
                 nn.AdaptiveAvgPool2d((1, 1)),
-                conv_nd(conf.dims, 512, conf.out_channels, 1),
+                conv_nd(conf.dims, ch, conf.out_channels, 1),
                 nn.Flatten(),
             )
         else:
@@ -662,9 +662,11 @@ class Resnet18EncoderModel(nn.Module):
         # self.pos_emb1 = nn.Parameter(th.randn(in_channels[1], scale[1], scale[1]) / in_channels[1]**0.5)
         # self.pos_emb2 = nn.Parameter(th.randn(in_channels[2], scale[2], scale[2]) / in_channels[2]**0.5)
         # self.pos_emb3 = nn.Parameter(th.randn(in_channels[3], scale[3], scale[3]) / in_channels[3]**0.5)
-
-        self.conv1 = nn.Conv2d(ch, 384, kernel_size=3, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(384, 512, kernel_size=3, stride=2, padding=1)
+        
+        ch_in = sum(out_channels[1: 4])
+        # self.conv1 = nn.Conv2d(ch_in, ch_in, kernel_size=3, stride=2, padding=1)
+        # self.conv2 = nn.Conv2d(ch_in, ch, kernel_size=3, stride=2, padding=1)
+        # self.conv3 = nn.Conv2d(ch, ch, kernel_size=3, stride=2, padding=1)
 
     def forward(self, x, t=None, return_2d_feature=False):
         """
@@ -682,11 +684,11 @@ class Resnet18EncoderModel(nn.Module):
         results = []
         h = self.layer0(x)
         h = self.layer1(h)
-        c1 = self.pool(h)
+        c1 = h
         h = self.layer2(h)
-        c2 = self.pool(h)
+        c2 = h
         h = self.layer3(h)      
-        c3 = self.pool(h)
+        c3 = h
 
         # c1 = c1 + self.pos_emb1
         # c2 = c2 + self.pos_emb2
@@ -696,16 +698,23 @@ class Resnet18EncoderModel(nn.Module):
         # c2 = self.attn2(c2)
         # c3 = self.attn3(c3)
 
+        c1 = self.pool(c1)
+        c2 = self.pool(c2)
+        c3 = self.pool(c3)
+
         c1 = self.adjust1(c1)
         c2 = self.adjust2(c2)
         c3 = self.adjust3(c3)
         c3 = self.upsample(c3)
 
-        h = c1 + c2 + c3
-        h = self.conv1(h)
-        h = self.conv2(h)
-
+        h = th.concat((c1, c2, c3), dim=1)
+        # h = c1 + c2 + c3
+        
         # h = self.attn(h)
+        
+        # h = self.conv1(h)
+        # h = self.conv2(h)
+        # h = self.conv3(h)
 
         h_2d = h
         h = self.out(h)

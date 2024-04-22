@@ -121,6 +121,8 @@ class GaussianDiffusionBeatGans:
             noise = th.randn_like(x_start)
 
         x_t = self.q_sample(x_start, t, noise=noise)
+        # x_zero = th.zeros_like(x_start).cuda()
+        # x_t = self.q_sample(x_zero, t, noise=noise)
 
         terms = {'x_t': x_t}
 

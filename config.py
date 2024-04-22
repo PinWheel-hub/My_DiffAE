@@ -45,6 +45,10 @@ data_paths = {
     os.path.expanduser('datasets/wood.lmdb'),
     'mvteclmdb':
     os.path.expanduser('datasets/mvtec.lmdb'),
+    'tyrelmdb':
+    os.path.expanduser('datasets/tyre.lmdb'),
+    'textureslmdb':
+    os.path.expanduser('datasets/textures.lmdb'),
 }
 
 
@@ -307,7 +311,7 @@ class TrainConfig(BaseConfig):
                               original_resolution=None,
                               crop_d2c=True,
                               **kwargs)
-        elif self.data_name in ['capsulelmdb', 'woodlmdb', 'mvteclmdb']:
+        elif self.data_name in ['capsulelmdb', 'woodlmdb', 'mvteclmdb', 'tyrelmdb', 'textureslmdb']:
             # always use d2c crop
             return FFHQlmdb(path=path or self.data_path,
                               image_size=self.img_size,

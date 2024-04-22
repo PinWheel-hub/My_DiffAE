@@ -191,9 +191,9 @@ def mvtec_autoenc():
     conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
     conf.eval_every_samples = 800_000
     conf.eval_ema_every_samples = 800_000
-    conf.total_samples = 60_000
-    conf.save_every_samples = 3000
-    conf.batch_size = 8
+    conf.total_samples = 80_000
+    conf.save_every_samples = 5000
+    conf.batch_size = 12
     conf.lr = 1e-4 * conf.batch_size / 64
     conf.sample_size = conf.batch_size
     conf.make_model_conf()
@@ -215,6 +215,101 @@ def mvtec_autoenc_eco():
     conf.name = 'mvtec_autoenc_eco'
     return conf
 
+def textures128_autoenc_base():
+    conf = autoenc_base()
+    conf.data_name = 'textureslmdb'
+    conf.scale_up_gpus(4)
+    conf.img_size = 128
+    conf.net_ch = 128
+    # final resolution = 8x8
+    conf.net_ch_mult = (1, 1, 2, 3, 4)
+    # final resolution = 4x4
+    conf.net_enc_channel_mult = (1, 1, 2, 3, 4, 4)
+    conf.eval_ema_every_samples = 10_000_000
+    conf.eval_every_samples = 10_000_000
+    conf.make_model_conf()
+    return conf
+
+
+def textures_autoenc():
+    conf = textures128_autoenc_base()
+    conf.img_size = 256
+    conf.net_ch = 128
+    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
+    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
+    conf.eval_every_samples = 5000000
+    conf.eval_ema_every_samples = 5000000
+    conf.total_samples = 80_000
+    conf.save_every_samples = 5000
+    conf.batch_size = 9
+    conf.lr = 1e-4 * conf.batch_size / 64
+    conf.sample_size = conf.batch_size
+    conf.make_model_conf()
+    conf.name = 'textures_autoenc'
+    return conf
+
+
+def textures_autoenc_eco():
+    conf = textures128_autoenc_base()
+    conf.img_size = 256
+    conf.net_ch = 128
+    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
+    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
+    conf.eval_every_samples = 10_000_000
+    conf.eval_ema_every_samples = 10_000_000
+    conf.total_samples = 200_000_000
+    conf.batch_size = 64
+    conf.make_model_conf()
+    conf.name = 'textures_autoenc_eco'
+    return conf
+
+def tyre128_autoenc_base():
+    conf = autoenc_base()
+    conf.data_name = 'tyrelmdb'
+    conf.scale_up_gpus(4)
+    conf.img_size = 128
+    conf.net_ch = 128
+    # final resolution = 8x8
+    conf.net_ch_mult = (1, 1, 2, 3, 4)
+    # final resolution = 4x4
+    conf.net_enc_channel_mult = (1, 1, 2, 3, 4, 4)
+    conf.eval_ema_every_samples = 10_000_000
+    conf.eval_every_samples = 10_000_000
+    conf.make_model_conf()
+    return conf
+
+
+def tyre_autoenc():
+    conf = tyre128_autoenc_base()
+    conf.img_size = 256
+    conf.net_ch = 128
+    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
+    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
+    conf.eval_every_samples = 800_000
+    conf.eval_ema_every_samples = 800_000
+    conf.total_samples = 100_000
+    conf.save_every_samples = 5000
+    conf.batch_size = 16
+    conf.lr = 1e-4 * conf.batch_size / 64
+    conf.sample_size = conf.batch_size
+    conf.make_model_conf()
+    conf.name = 'tyre_autoenc'
+    return conf
+
+
+def tyre_autoenc_eco():
+    conf = tyre128_autoenc_base()
+    conf.img_size = 256
+    conf.net_ch = 128
+    conf.net_ch_mult = (1, 1, 2, 2, 4, 4)
+    conf.net_enc_channel_mult = (1, 1, 2, 2, 4, 4, 4)
+    conf.eval_every_samples = 10_000_000
+    conf.eval_ema_every_samples = 10_000_000
+    conf.total_samples = 200_000_000
+    conf.batch_size = 64
+    conf.make_model_conf()
+    conf.name = 'tyre_autoenc_eco'
+    return conf
 
 def ffhq128_ddpm_72M():
     conf = ffhq128_ddpm()
@@ -253,6 +348,14 @@ def mvtec128_autoenc_130M():
     conf.eval_ema_every_samples = 10_000_000
     conf.eval_every_samples = 10_000_000
     conf.name = 'mvtec128_autoenc_130M'
+    return conf
+
+def tyre128_autoenc_130M():
+    conf = tyre128_autoenc_base()
+    conf.total_samples = 130_000_000
+    conf.eval_ema_every_samples = 10_000_000
+    conf.eval_every_samples = 10_000_000
+    conf.name = 'tyre128_autoenc_130M'
     return conf
 
 
@@ -352,6 +455,24 @@ def pretrain_mvtec_autoenc():
         path=f'checkpoints/{mvtec_autoenc().name}/last.ckpt',
     )
     conf.latent_infer_path = f'checkpoints/{mvtec_autoenc().name}/latent.pkl'
+    return conf
+
+def pretrain_tyre128_autoenc130M():
+    conf = tyre128_autoenc_base()
+    conf.pretrain = PretrainConfig(
+        name='130M',
+        path=f'checkpoints/{tyre128_autoenc_130M().name}/last.ckpt',
+    )
+    conf.latent_infer_path = f'checkpoints/{tyre128_autoenc_130M().name}/latent.pkl'
+    return conf
+
+def pretrain_tyre_autoenc():
+    conf = tyre_autoenc()
+    conf.pretrain = PretrainConfig(
+        name='90M',
+        path=f'checkpoints/{tyre_autoenc().name}/last.ckpt',
+    )
+    conf.latent_infer_path = f'checkpoints/{tyre_autoenc().name}/latent.pkl'
     return conf
 
 
